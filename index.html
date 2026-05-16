@@ -1,127 +1,149 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vietnamese Flash Cards</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Typing Game</title>
+<style>
+  body {
+    font-family: sans-serif;
+    background: #111;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    flex-direction: column;
+  }
 
-  <style>
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: #f3f4f6;
-      font-family: sans-serif;
-    }
+  #game {
+    text-align: center;
+  }
 
-    .card {
-      width: 90%;
-      max-width: 360px;
-      background: white;
-      padding: 32px;
-      border-radius: 20px;
-      text-align: center;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    }
+  #word {
+    font-size: 2.5rem;
+    margin: 20px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.4s ease;
+  }
 
-    h1 {
-      font-size: 24px;
-      margin-top: 0;
-    }
+  #word.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
 
-    #japanese {
-      font-size: 28px;
-      font-weight: bold;
-      margin: 32px 0 16px;
-    }
+  #input {
+    font-size: 1.5rem;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    outline: none;
+  }
 
-    #vietnamese {
-      font-size: 24px;
-      color: #10b981;
-      min-height: 40px;
-      margin-bottom: 24px;
-    }
+  #score {
+    margin-top: 20px;
+    font-size: 1.2rem;
+  }
 
-    button {
-      border: none;
-      padding: 14px 20px;
-      border-radius: 12px;
-      font-size: 16px;
-      cursor: pointer;
-      margin: 6px;
-    }
+  .flash {
+    animation: flash 0.3s;
+  }
 
-    .show {
-      background: #3b82f6;
-      color: white;
-    }
-  </style>
+  @keyframes flash {
+    0% { color: white; }
+    50% { color: #00ff99; }
+    100% { color: white; }
+  }
+
+  .shake {
+    animation: shake 0.3s;
+  }
+
+  @keyframes shake {
+    0% { transform: translate(0, 0); }
+    25% { transform: translate(-5px, 3px); }
+    50% { transform: translate(5px, -3px); }
+    75% { transform: translate(-3px, 2px); }
+    100% { transform: translate(0, 0); }
+  }
+</style>
 </head>
 <body>
 
-  <div class="card">
-    <h1>🇻🇳 ベトナム語単語帳</h1>
+<div id="game">
+  <div id="word"></div>
+  <input id="input" type="text" autofocus autocomplete="off" />
+  <div id="score">Score: 0</div>
+</div>
 
-    <div id="japanese"></div>
-    <div id="vietnamese"></div>
+<script>
+const words = [
+  "xin chào",
+  "cảm ơn",
+  "tôi là ai",
+  "học tiếng Việt",
+  "đi chơi",
+  "javascript",
+  "typing game"
+];
 
-    <button class="show" id="showButton">答えを見る</button>
-    <button class="next" id="nextButton">次へ</button>
-  </div>
+let current = "";
+let score = 0;
 
-  <script>
-    'use strict';
+const wordEl = document.getElementById("word");
+const inputEl = document.getElementById("input");
+const scoreEl = document.getElementById("score");
 
-    const words = [
-      {
-        japanese: '休憩',
-        vietnamese: 'Nghỉ giải lao'
-      },
-      {
-        japanese: '急いでください',
-        vietnamese: 'Xin hãy nhanh lên'
-      },
-      {
-        japanese: 'ありがとうございます',
-        vietnamese: 'Cảm ơn'
-      },
-      {
-        japanese: 'お疲れさまです',
-        vietnamese: 'Bạn vất vả rồi'
-      }
-    ];
+function shakeScreen() {
+  document.body.classList.add("shake");
+  setTimeout(() => {
+    document.body.classList.remove("shake");
+  }, 300);
+}
 
-    const japanese = document.getElementById('japanese');
-    const vietnamese = document.getElementById('vietnamese');
+function resetInput() {
+  // IME・履歴残り対策として強制リセット
+  inputEl.value = "";
+  inputEl.focus();
+  inputEl.dispatchEvent(new Event("input"));
+}
 
-    const showButton = document.getElementById('showButton');
-    const nextButton = document.getElementById('nextButton');
+function newWord() {
+  current = words[Math.floor(Math.random() * words.length)];
 
-    let currentIndex = 0;
+  wordEl.classList.remove("show");
+  setTimeout(() => {
+    wordEl.textContent = current;
+    wordEl.classList.add("show");
+  }, 150);
 
-    function showWord() {
-      japanese.textContent = words[currentIndex].japanese;
-      vietnamese.textContent = '';
-    }
+  resetInput();
+}
 
-    showButton.addEventListener('click', () => {
-      vietnamese.textContent = words[currentIndex].vietnamese;
-    });
+inputEl.addEventListener("input", (e) => {
+  const val = e.target.value;
 
-    nextButton.addEventListener('click', () => {
-      currentIndex++;
+  // ミス判定
+  if (!current.startsWith(val)) {
+    shakeScreen();
+  }
 
-      if (currentIndex >= words.length) {
-        currentIndex = 0;
-      }
+  // 正解判定
+  if (val.trim() === current) {
+    score++;
+    scoreEl.textContent = "Score: " + score;
 
-      showWord();
-    });
+    scoreEl.classList.add("flash");
+    setTimeout(() => scoreEl.classList.remove("flash"), 300);
 
-    showWord();
-  </script>
+    resetInput();
+    newWord();
+  }
+});
+
+newWord();
+</script>
 
 </body>
 </html>
